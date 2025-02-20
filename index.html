@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Picker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            transition: background-color 0.3s ease;
+        }
+
+        .color-picker-container {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .color-picker-container h1 {
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+
+        #colorPicker {
+            width: 100%;
+            height: 50px;
+            padding: 0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .color-values {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .color-value {
+            background: #f5f5f5;
+            padding: 0.5rem;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+
+        .selected-color {
+            position: fixed;
+            top: 90%;
+            left: 70%;
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #333;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <span class="selected-color"></span>
+    <div class="color-picker-container">
+        <h1>Renk Seçici</h1>
+        <div class="input-group">
+            <label for="colorPicker">Renk seçin:</label>
+            <input type="color" id="colorPicker" value="#ffffff">
+        </div>
+        <div class="color-values">
+            <div class="color-value" id="hexValue">#FFFFFF</div>
+            <div class="color-value" id="rgbValue">rgb(255, 255, 255)</div>
+        </div>
+    </div>
+
+    <script>
+        const colorPicker = document.getElementById('colorPicker');
+        const hexValue = document.getElementById('hexValue');
+        const rgbValue = document.getElementById('rgbValue');
+        const selectedColorSpan = document.querySelector('.selected-color');
+
+        function getBrightness(r, g, b) {
+            // Calculate relative luminance using the formula
+            // (0.299 * R + 0.587 * G + 0.114 * B)
+            return (0.299 * r + 0.587 * g + 0.114 * b);
+        }
+
+        function getColorName(hexColor) {
+            const colorMap = {
+                '#FF0000': 'Kırmızı',
+                '#00FF00': 'Yeşil',
+                '#0000FF': 'Mavi',
+                '#FFFF00': 'Sarı',
+                '#FF00FF': 'Magenta',
+                '#00FFFF': 'Cyan',
+                '#000000': 'Siyah',
+                '#FFFFFF': 'Beyaz',
+                '#808080': 'Gri',
+                '#800000': 'Bordo',
+                '#808000': 'Zeytin Yeşili',
+                '#008000': 'Koyu Yeşil',
+                '#800080': 'Mor',
+                '#008080': 'Turkuaz',
+                '#000080': 'Lacivert',
+                '#FFA500': 'Turuncu',
+                '#FFC0CB': 'Pembe',
+                '#A52A2A': 'Kahverengi',
+                '#FFB6C1': 'Açık Pembe',
+                '#FF69B4': 'Sıcak Pembe',
+                '#FF1493': 'Koyu Pembe',
+                '#FF4500': 'Turuncu Kırmızı',
+                '#FF8C00': 'Koyu Turuncu',
+                '#FFD700': 'Altın Sarısı',
+                '#FFFF99': 'Açık Sarı',
+                '#98FB98': 'Açık Yeşil',
+                '#90EE90': 'Açık Deniz Yeşili',
+                '#32CD32': 'Limon Yeşili',
+                '#228B22': 'Orman Yeşili',
+                '#006400': 'Çam Yeşili',
+                '#87CEEB': 'Gök Mavisi',
+                '#00BFFF': 'Derin Gök Mavisi',
+                '#1E90FF': 'Parlak Mavi',
+                '#4169E1': 'Kraliyet Mavisi',
+                '#000066': 'Gece Mavisi',
+                '#DDA0DD': 'Erik',
+                '#BA55D3': 'Orkide',
+                '#9400D3': 'Koyu Mor',
+                '#4B0082': 'Çivit Mavisi',
+                '#8B4513': 'Sedir',
+                '#D2691E': 'Çikolata',
+                '#CD853F': 'Taba',
+                '#DEB887': 'Buğday',
+                '#F5DEB3': 'Buğday Teni',
+                '#F0E68C': 'Krem',
+                '#BDB76B': 'Haki',
+                '#556B2F': 'Koyu Zeytin Yeşili',
+                '#C0C0C0': 'Gümüş',
+                '#696969': 'Koyu Gri',
+                '#A9A9A9': 'Orta Gri',
+                '#DCDCDC': 'Açık Gri',
+                '#E6E6FA': 'Lavanta',
+                '#FFF0F5': 'Lavanta Pembesi',
+                '#FAF0E6': 'Keten',
+                '#FDF5E6': 'Eski Dantel',
+                '#FAEBD7': 'Antik Beyaz',
+                '#FFE4C4': 'Bisküvi',
+                '#FFDAB9': 'Şeftali',
+                '#FFE4B5': 'Kavuniçi',
+                '#FFA07A': 'Açık Somon',
+                '#FA8072': 'Somon',
+                '#E9967A': 'Koyu Somon',
+                '#F08080': 'Açık Mercan',
+                '#CD5C5C': 'Hint Kırmızısı',
+                '#DC143C': 'Kızıl Kırmızı',
+                '#B22222': 'Ateş Tuğlası',
+                '#8B0000': 'Koyu Kırmızı',
+                '#FF7F50': 'Mercan',
+                '#FF6347': 'Domates',
+                '#FFE4E1': 'Gül Pembesi',
+                '#FAF0E6': 'Keten',
+                '#FFDEAD': 'Navajo Beyazı',
+                '#D2B48C': 'Taba',
+                '#BC8F8F': 'Gül Kahvesi',
+                '#F4A460': 'Kum Kahvesi',
+                '#DAA520': 'Altın Sarısı',
+                '#B8860B': 'Koyu Altın',
+                '#CD853F': 'Peru Kahvesi',
+                '#D2691E': 'Çikolata',
+                '#8B4513': 'Sedir Ağacı',
+                '#A0522D': 'Toprak',
+                '#6B8E23': 'Zeytin',
+                '#3CB371': 'Deniz Yeşili',
+                '#20B2AA': 'Açık Deniz Yeşili',
+                '#2E8B57': 'Deniz Yosunu',
+                '#66CDAA': 'Orta Akuamarin',
+                '#00FA9A': 'Bahar Yeşili',
+                '#7CFC00': 'Çimen Yeşili',
+                '#7FFF00': 'Chartreuse',
+                '#ADFF2F': 'Yeşil Sarı',
+                '#9ACD32': 'Sarı Yeşil',
+                '#00FF7F': 'Bahar Yeşili',
+                '#40E0D0': 'Turkuaz',
+                '#48D1CC': 'Orta Turkuaz',
+                '#00CED1': 'Koyu Turkuaz',
+                '#5F9EA0': 'Kadet Mavisi',
+                '#4682B4': 'Çelik Mavisi',
+                '#B0C4DE': 'Açık Çelik Mavisi',
+                '#ADD8E6': 'Açık Mavi',
+                '#B0E0E6': 'Pudra Mavisi',
+                '#7B68EE': 'Orta Menekşe',
+                '#6A5ACD': 'Kayrak Mavisi',
+                '#483D8B': 'Koyu Kayrak Mavisi',
+                '#E6E6FA': 'Lavanta',
+                '#D8BFD8': 'Devedikeni',
+                '#DDA0DD': 'Erik',
+                '#DA70D6': 'Orkide',
+                '#EE82EE': 'Menekşe',
+                '#FF00FF': 'Fuşya',
+                '#8B008B': 'Koyu Magenta',
+                '#800080': 'Mor',
+                '#BA55D3': 'Orta Orkide',
+                '#9400D3': 'Koyu Menekşe',
+                '#9370DB': 'Orta Mor',
+                '#663399': 'Rebecca Moru',
+                '#4B0082': 'Çivit',
+                '#FFE4E1': 'Gül Pembesi',
+                '#FFF0F5': 'Lavanta Pembesi',
+                '#DB7093': 'Soluk Menekşe Kırmızısı',
+                '#FF1493': 'Derin Pembe',
+                '#C71585': 'Orta Menekşe Kırmızısı',
+                '#FF69B4': 'Sıcak Pembe',
+                '#FFB6C1': 'Açık Pembe',
+                '#FFC0CB': 'Pembe',
+                '#F5F5F5': 'Beyazımsı',
+                '#F8F8FF': 'Hayalet Beyaz',
+                '#F0F8FF': 'Alice Mavisi',
+                '#F5FFFA': 'Nane Kreması',
+                '#F0FFF0': 'Bal Çiği',
+                '#FAFAD2': 'Açık Altın Sarısı',
+                '#FFFACD': 'Limon Şifonu',
+                '#FFF8DC': 'Mısır İpeği',
+                '#FFEBCD': 'Badem',
+                '#FFE4B5': 'Kavuniçi',
+                '#FFDEAD': 'Navajo Beyazı'
+            };
+            return colorMap[hexColor.toUpperCase()] || null;
+        }
+
+        function updateColor(color) {
+            document.body.style.backgroundColor = color;
+            hexValue.textContent = color.toUpperCase();
+            
+            // Convert hex to RGB
+            const r = parseInt(color.slice(1, 3), 16);
+            const g = parseInt(color.slice(3, 5), 16);
+            const b = parseInt(color.slice(5, 7), 16);
+            const rgbColor = `rgb(${r}, ${g}, ${b})`;
+            rgbValue.textContent = rgbColor;
+            
+            // Update selected color span with color name if available
+            const colorName = getColorName(color);
+            console.log(color)
+            selectedColorSpan.textContent = colorName || rgbColor;
+            
+            // Calculate brightness and set text color
+            const brightness = getBrightness(r, g, b);
+            selectedColorSpan.style.color = brightness > 128 ? '#000000' : '#FFFFFF';
+
+            // Save color to localStorage
+            localStorage.setItem('selectedColor', color);
+        }
+
+        colorPicker.addEventListener('input', (e) => {
+            updateColor(e.target.value);
+        });
+
+        // Initialize with saved color or white background
+        const savedColor = localStorage.getItem('selectedColor') || '#FFFFFF';
+        colorPicker.value = savedColor;
+        updateColor(savedColor);
+    </script>
+</body>
+</html>
