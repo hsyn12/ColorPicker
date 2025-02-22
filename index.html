@@ -22,48 +22,54 @@
 
         .color-picker-container {
             background: rgba(255, 255, 255, 0.9);
-            padding: 2rem;
-            border-radius: 10px;
+            padding: 1rem;
+            border-radius: 8px;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
             text-align: center;
+            max-width: 300px;
+            margin-bottom: 1rem;
         }
 
         .color-picker-container h1 {
-            margin-bottom: 1.5rem;
+            margin-bottom: 0.75rem;
             color: #333;
+            font-size: 1.2rem;
         }
 
         .input-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 0.75rem;
+            width: 100%;
         }
 
         .input-group label {
             display: block;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.25rem;
             color: #666;
+            font-size: 0.9rem;
         }
 
-        #colorPicker {
+        #colorPicker, #colorPicker2 {
             width: 100%;
-            height: 50px;
+            height: 40px;
             padding: 0;
             border: none;
-            border-radius: 5px;
+            border-radius: 4px;
             cursor: pointer;
         }
 
         .color-values {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-            margin-top: 1.5rem;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
         }
 
         .color-value {
             background: #f5f5f5;
-            padding: 0.5rem;
-            border-radius: 5px;
+            padding: 0.35rem;
+            border-radius: 4px;
             font-family: monospace;
+            font-size: 0.8rem;
         }
 
         .selected-color {
@@ -75,19 +81,124 @@
             color: #333;
             opacity: 0.7;
         }
+
+        .gradient-controls {
+            display: none;
+            margin-top: 0.5rem;
+        }
+
+        .gradient-controls.active {
+            display: block;
+            width: 100%;
+        }
+
+        .direction-select {
+            width: 100%;
+            padding: 0.35rem;
+            margin-top: 0.25rem;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 0.9rem;
+        }
+
+        .mode-switch {
+            margin: 0.5rem 0;
+            font-size: 0.9rem;
+        }
+
+        .copy-section {
+            margin-top: 1rem;
+            border-top: 1px solid #eee;
+            padding-top: 0.5rem;
+        }
+
+        .format-select {
+            width: 100%;
+            padding: 0.35rem;
+            margin: 0.5rem 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 0.9rem;
+        }
+
+        .copy-button {
+            background: #f0f0f0;
+            border: none;
+            padding: 0.35rem 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin: 0.25rem;
+        }
+
+        .copy-button:hover {
+            background: #e0e0e0;
+        }
+
+        .copy-feedback {
+            font-size: 0.8rem;
+            color: #4CAF50;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .copy-feedback.visible {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
     <span class="selected-color"></span>
     <div class="color-picker-container">
-        <h1>Renk Seçici</h1>
+        <h1>Color Picker</h1>
+        
+        <div class="mode-switch">
+            <label>
+                <input type="checkbox" id="gradientToggle"> Gradient Mode
+            </label>
+        </div>
+
         <div class="input-group">
-            <label for="colorPicker">Choose color:</label>
+            <label for="colorPicker">Select color:</label>
             <input type="color" id="colorPicker" value="#ffffff">
         </div>
+
+        <div class="gradient-controls">
+            <div class="input-group">
+                <label for="colorPicker2">Second color:</label>
+                <input type="color" id="colorPicker2" value="#000000">
+            </div>
+            <select class="direction-select" id="gradientDirection">
+                <option value="to right">Right</option>
+                <option value="to left">Left</option>
+                <option value="to bottom">Bottom</option>
+                <option value="to top">Top</option>
+                <option value="to right bottom">Bottom Right</option>
+                <option value="to right top">Top Right</option>
+                <option value="to left bottom">Bottom Left</option>
+                <option value="to left top">Top Left</option>
+            </select>
+        </div>
+
         <div class="color-values">
             <div class="color-value" id="hexValue">#FFFFFF</div>
             <div class="color-value" id="rgbValue">rgb(255, 255, 255)</div>
+        </div>
+
+        <div class="copy-section">
+            <select class="format-select" id="formatSelect">
+                <option value="hex">HEX (#FFFFFF)</option>
+                <option value="rgb">RGB (255, 255, 255)</option>
+                <option value="css">CSS</option>
+                <option value="tailwind">Tailwind CSS</option>
+                <option value="sass">SASS Variable</option>
+                <option value="less">LESS Variable</option>
+                <option value="javascript">JavaScript</option>
+                <option value="swift">Swift</option>
+                <option value="kotlin">Kotlin</option>
+            </select>
+            <button class="copy-button" id="copyButton">Copy</button>
+            <div class="copy-feedback" id="copyFeedback">Copied!</div>
         </div>
     </div>
 
@@ -96,6 +207,11 @@
         const hexValue = document.getElementById('hexValue');
         const rgbValue = document.getElementById('rgbValue');
         const selectedColorSpan = document.querySelector('.selected-color');
+        const colorPicker2 = document.getElementById('colorPicker2');
+        const gradientToggle = document.getElementById('gradientToggle');
+        const gradientDirection = document.getElementById('gradientDirection');
+        const gradientControls = document.querySelector('.gradient-controls');
+        const formatSelect = document.getElementById('formatSelect');
 
         function getBrightness(r, g, b) {
             // Calculate relative luminance using the formula
@@ -225,38 +341,176 @@
             return colorMap[hexColor.toUpperCase()] || null;
         }
 
-        function updateColor(color) {
-            document.body.style.backgroundColor = color;
-            hexValue.textContent = color.toUpperCase();
-            
-            // Convert hex to RGB
-            const r = parseInt(color.slice(1, 3), 16);
-            const g = parseInt(color.slice(3, 5), 16);
-            const b = parseInt(color.slice(5, 7), 16);
-            const rgbColor = `rgb(${r}, ${g}, ${b})`;
-            rgbValue.textContent = rgbColor;
-            
-            // Update selected color span with color name if available
-            const colorName = getColorName(color);
-            console.log(color)
-            selectedColorSpan.textContent = colorName || rgbColor;
-            
-            // Calculate brightness and set text color
-            const brightness = getBrightness(r, g, b);
-            selectedColorSpan.style.color = brightness > 128 ? '#000000' : '#FFFFFF';
-
-            // Save color to localStorage
-            localStorage.setItem('selectedColor', color);
+        function updateColor(color1, color2 = null) {
+            if (gradientToggle.checked && color2) {
+                const direction = gradientDirection.value;
+                const gradient = `linear-gradient(${direction}, ${color1}, ${color2})`;
+                document.body.style.background = gradient;
+                
+                // Update color values display
+                hexValue.textContent = `${color1.toUpperCase()} → ${color2.toUpperCase()}`;
+                
+                // Convert hex to RGB for both colors
+                const r1 = parseInt(color1.slice(1, 3), 16);
+                const g1 = parseInt(color1.slice(3, 5), 16);
+                const b1 = parseInt(color1.slice(5, 7), 16);
+                
+                const r2 = parseInt(color2.slice(1, 3), 16);
+                const g2 = parseInt(color2.slice(3, 5), 16);
+                const b2 = parseInt(color2.slice(5, 7), 16);
+                
+                rgbValue.textContent = `rgb(${r1}, ${g1}, ${b1}) → rgb(${r2}, ${g2}, ${b2})`;
+                selectedColorSpan.textContent = 'Gradient';
+                
+                // Save gradient settings
+                localStorage.setItem('gradientColor1', color1);
+                localStorage.setItem('gradientColor2', color2);
+                localStorage.setItem('gradientDirection', direction);
+                localStorage.setItem('gradientMode', 'true');
+            } else {
+                // Original solid color logic
+                document.body.style.background = color1;
+                hexValue.textContent = color1.toUpperCase();
+                
+                const r = parseInt(color1.slice(1, 3), 16);
+                const g = parseInt(color1.slice(3, 5), 16);
+                const b = parseInt(color1.slice(5, 7), 16);
+                const rgbColor = `rgb(${r}, ${g}, ${b})`;
+                rgbValue.textContent = rgbColor;
+                
+                const colorName = getColorName(color1);
+                selectedColorSpan.textContent = colorName || rgbColor;
+                
+                const brightness = getBrightness(r, g, b);
+                selectedColorSpan.style.color = brightness > 128 ? '#000000' : '#FFFFFF';
+                
+                localStorage.setItem('selectedColor', color1);
+                localStorage.setItem('gradientMode', 'false');
+            }
         }
 
-        colorPicker.addEventListener('input', (e) => {
-            updateColor(e.target.value);
+        function formatColor(format, color1, color2 = null) {
+            const isGradient = gradientToggle.checked && color2;
+            
+            switch(format) {
+                case 'hex':
+                    return isGradient ? `${color1} → ${color2}` : color1;
+                case 'rgb':
+                    const toRgb = (hex) => {
+                        const r = parseInt(hex.slice(1, 3), 16);
+                        const g = parseInt(hex.slice(3, 5), 16);
+                        const b = parseInt(hex.slice(5, 7), 16);
+                        return `rgb(${r}, ${g}, ${b})`;
+                    };
+                    return isGradient ? 
+                        `${toRgb(color1)} → ${toRgb(color2)}` : 
+                        toRgb(color1);
+                case 'css':
+                    return isGradient ? 
+                        `background: linear-gradient(${gradientDirection.value}, ${color1}, ${color2});` :
+                        `background-color: ${color1};`;
+                case 'tailwind':
+                    return isGradient ? 
+                        `class="bg-gradient-to-r from-[${color1}] to-[${color2}]"` :
+                        `class="bg-[${color1}]"`;
+                case 'sass':
+                    return isGradient ?
+                        `$gradient: linear-gradient(${gradientDirection.value}, ${color1}, ${color2});` :
+                        `$color: ${color1};`;
+                case 'less':
+                    return isGradient ?
+                        `@gradient: linear-gradient(${gradientDirection.value}, ${color1}, ${color2});` :
+                        `@color: ${color1};`;
+                case 'javascript':
+                    return isGradient ?
+                        `background: 'linear-gradient(${gradientDirection.value}, ${color1}, ${color2})'` :
+                        `backgroundColor: '${color1}'`;
+                case 'swift':
+                    return isGradient ?
+                        `let gradient = LinearGradient(colors: [Color(hex: "${color1}"), Color(hex: "${color2}")], startPoint: .leading, endPoint: .trailing)` :
+                        `let color = Color(hex: "${color1}")`;
+                case 'kotlin':
+                    return isGradient ?
+                        `val gradient = Brush.horizontalGradient(listOf(Color(0x${color1.replace('#', '')}), Color(0x${color2.replace('#', '')})))` :
+                        `val color = Color(0x${color1.replace('#', '')})`;
+                default:
+                    return color1;
+            }
+        }
+
+        async function copyToClipboard(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                const feedback = document.getElementById('copyFeedback');
+                feedback.classList.add('visible');
+                setTimeout(() => feedback.classList.remove('visible'), 2000);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+            }
+        }
+
+        document.getElementById('copyButton').addEventListener('click', () => {
+            const format = document.getElementById('formatSelect').value;
+            const formattedColor = formatColor(
+                format,
+                colorPicker.value,
+                gradientToggle.checked ? colorPicker2.value : null
+            );
+            copyToClipboard(formattedColor);
         });
 
-        // Initialize with saved color or white background
-        const savedColor = localStorage.getItem('selectedColor') || '#FFFFFF';
-        colorPicker.value = savedColor;
-        updateColor(savedColor);
+        // Add format select change listener
+        formatSelect.addEventListener('change', () => {
+            localStorage.setItem('selectedFormat', formatSelect.value);
+        });
+
+        // Event Listeners
+        colorPicker.addEventListener('input', () => {
+            if (gradientToggle.checked) {
+                updateColor(colorPicker.value, colorPicker2.value);
+            } else {
+                updateColor(colorPicker.value);
+            }
+        });
+
+        colorPicker2.addEventListener('input', () => {
+            if (gradientToggle.checked) {
+                updateColor(colorPicker.value, colorPicker2.value);
+            }
+        });
+
+        gradientToggle.addEventListener('change', () => {
+            gradientControls.classList.toggle('active', gradientToggle.checked);
+            updateColor(colorPicker.value, gradientToggle.checked ? colorPicker2.value : null);
+        });
+
+        gradientDirection.addEventListener('change', () => {
+            if (gradientToggle.checked) {
+                updateColor(colorPicker.value, colorPicker2.value);
+            }
+        });
+
+        // Initialize with saved settings
+        const savedGradientMode = localStorage.getItem('gradientMode') === 'true';
+        gradientToggle.checked = savedGradientMode;
+        gradientControls.classList.toggle('active', savedGradientMode);
+
+        // Load saved format
+        const savedFormat = localStorage.getItem('selectedFormat');
+        if (savedFormat) {
+            formatSelect.value = savedFormat;
+        }
+
+        if (savedGradientMode) {
+            colorPicker.value = localStorage.getItem('gradientColor1') || '#ffffff';
+            colorPicker2.value = localStorage.getItem('gradientColor2') || '#000000';
+            gradientDirection.value = localStorage.getItem('gradientDirection') || 'to right';
+            updateColor(colorPicker.value, colorPicker2.value);
+        } else {
+            const savedColor = localStorage.getItem('selectedColor') || '#FFFFFF';
+            colorPicker.value = savedColor;
+            updateColor(savedColor);
+        }
     </script>
 </body>
 </html>
